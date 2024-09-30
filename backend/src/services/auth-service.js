@@ -24,6 +24,10 @@ const authService = {
         updatedAt: dbUser.updatedAt,
       };
     } catch (error) {
+      console.log(error.code)
+      if (error.code === 'P2002') {
+        throw new HttpError(`Email is already in use`, 409)
+      }
       throw new HttpError(`Error creating user: ${error.message}`);
     }
   },
@@ -38,7 +42,7 @@ const authService = {
 
     console.log(dbUser);
 
-    if (!dbUser) throw new HttpError("Invalid email or password");
+    if (!dbUser) throw new HttpError("Invalid email or password", 401);
 
     if (await bcrypt.compare(password, dbUser.password)) {
       const token = jwt.sign(
@@ -47,10 +51,11 @@ const authService = {
           userName: dbUser.userName,
           email,
           role: dbUser.role,
-          createdAt: dbUser.createdAt,
-          updatedAt: dbUser.updatedAt,
+          // createdAt: dbUser.createdAt,
+          // updatedAt: dbUser.updatedAt,
         },
-        JWT_SECRET
+        JWT_SECRET,
+        { expiresIn: '1h' }
       );
       console.log({token})
       return { token };
